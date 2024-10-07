@@ -116,7 +116,7 @@
     #define NUM_SOCKETS 5
 #elif defined(WOLFSSH_LWIP)
     #include <unistd.h>
-    #include <sys/socket.h>
+    #include <lwip/sockets.h>
     #include <pthread.h>
     #include <lwip/tcp.h>
     #include <lwip/inet.h>
@@ -621,8 +621,8 @@ static INLINE void tcp_socket(WS_SOCKET_T* sockFd, int targetProtocol)
 #endif
 
 
-#if defined(WOLFSSH_TEST_SERVER) && !defined(FREESCALE_MQX)\
-                                 && !defined(WOLFSSH_LWIP)
+#if defined(WOLFSSH_TEST_SERVER) && !defined(FREESCALE_MQX)
+#undef tcp_listen                                 
 
 static INLINE void tcp_listen(WS_SOCKET_T* sockfd, word16* port, int useAnyAddr)
 {
@@ -652,7 +652,11 @@ static INLINE void tcp_listen(WS_SOCKET_T* sockfd, word16* port, int useAnyAddr)
         int on  = 1;
     #endif
         socklen_t len = sizeof(on);
+        #ifndef RPI_PICO
         res = setsockopt(*sockfd, SOL_SOCKET, SO_REUSEADDR, &on, len);
+        #else
+        res = setsockopt(*sockfd, IPPROTO_TCP, SO_REUSEADDR, &on, len);
+        #endif
         if (res < 0)
             err_sys("setsockopt SO_REUSEADDR failed\n");
     }
